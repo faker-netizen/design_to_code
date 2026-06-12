@@ -10,13 +10,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ai-sdk/react": "^3.0.200",
     "@ant-design/icons": "^6.1.0",
     "@d2c/components": "workspace:*",
     "@d2c/utils": "workspace:*",
     "@tanstack/react-virtual": "^3.13.25",
+    "ai": "^6.0.198",
     "antd": "^6.3.1",
     "axios": "^1.16.1",
-    "pdfjs-dist": "^6.0.227",
+    "pdfjs-dist": "5.4.296",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-markdown": "^10.1.0",

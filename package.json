@@ -4,15 +4,19 @@
   "scripts": {
     "dev:frontend": "pnpm -C apps/web dev",
     "dev:backend": "pnpm -C apps/backend dev",
+    "dev:mobile": "pnpm -C apps/mobile start",
     "build": "pnpm -r build",
     "lint": "pnpm -C apps/web exec eslint . --max-warnings=0 && pnpm -C apps/backend lint",
-    "typecheck": "pnpm -C apps/backend exec tsc --noEmit && pnpm -C apps/web exec tsc -b --noEmit",
+    "typecheck": "pnpm -C apps/backend exec tsc --noEmit && pnpm -C apps/web exec tsc -b --noEmit && pnpm -C apps/mobile typecheck",
     "test:e2e": "playwright test -c e2e/playwright.config.mts",
     "test:e2e:smoke": "playwright test -c e2e/playwright.config.mts --grep @smoke",
     "test:e2e:integration": "playwright test -c e2e/playwright.config.mts --grep @integration",
     "test:e2e:ui": "playwright test -c e2e/playwright.config.mts --ui",
     "prepare": "husky",
-    "dev": "concurrently -n web,backend -c blue,green \"pnpm -C apps/web dev\" \"pnpm -C apps/backend dev\""
+    "dev": "concurrently -n web,backend -c blue,green \"pnpm -C apps/web dev\" \"pnpm -C apps/backend dev\"",
+    "harness:build": "pnpm -C packages/ai-harness build",
+    "harness:init": "node packages/ai-harness/dist/cli.js init",
+    "harness:doctor": "node packages/ai-harness/dist/cli.js doctor"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
@@ -23,5 +27,11 @@
     "tsdown": "^0.22.0",
     "typescript": "^6.0.3"
   },
-  "packageManager": "pnpm@10.28.1"
+  "packageManager": "pnpm@10.28.1",
+  "pnpm": {
+    "overrides": {
+      "@types/react": "^19.2.7",
+      "@types/react-dom": "^19.2.3"
+    }
+  }
 }

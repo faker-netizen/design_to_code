@@ -6,7 +6,6 @@ import {useAppWindowFrame} from "./useAppWindowFrame.ts";
 import {useWindowManager} from "./useWindowManager.ts";
 import {WindowContentContext} from "./windowContentContext.ts";
 import type {WindowInstance} from "./types.ts";
-import {useParams} from "react-router-dom";
 
 type AppWindowProps = {
     window: WindowInstance;
@@ -26,9 +25,6 @@ export default function AppWindow({window}: AppWindowProps) {
 
     const {rootRef, titlebarRef, isDragging, dragHandlers} =
         useAppWindowFrame({window, moveWindow, clearOpeningAnimation});
-
-    function f(keyA:string,keyB:string,keyC:string,parms:any[]){}
-             f('string','number','string',['a',1,'f'])
 
     return (
         <div
