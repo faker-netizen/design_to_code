@@ -28,10 +28,23 @@ function DesktopShellInner() {
 
     useEffect(() => {
         if (handledDeepLink.current) return;
-        if (searchParams.get("open") !== "chat") return;
-        handledDeepLink.current = true;
-        openApp("chat");
-        setSearchParams({}, {replace: true});
+        const open = searchParams.get("open");
+        if (open === "chat") {
+            handledDeepLink.current = true;
+            openApp("chat");
+            setSearchParams({}, {replace: true});
+            return;
+        }
+        if (open === "studio") {
+            handledDeepLink.current = true;
+            openApp("studio");
+            setSearchParams({}, {replace: true});
+            return;
+        }
+        if (!open) {
+            handledDeepLink.current = true;
+            openApp("studio");
+        }
     }, [openApp, searchParams, setSearchParams]);
 
     return (

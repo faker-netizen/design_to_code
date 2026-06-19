@@ -38,3 +38,11 @@ apps/backend/uploads
 /test-results/
 /blob-report/
 /playwright/.cache/
+
+# Expo
+.expo/
+apps/mobile/.expo/
+apps/mobile/dist/
+
+# Playwright MCP snapshots (local debug)
+.playwright-mcp/

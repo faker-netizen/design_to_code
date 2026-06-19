@@ -1,5 +1,5 @@
 import {createBrowserRouter, Navigate} from "react-router-dom";
-import RequireAuth from "@/router/RequireAuth.tsx";
+import AuthBootstrap from "@/router/AuthBootstrap.tsx";
 import {lazyLoad} from "@/router/lazyLoad.tsx";
 import {DesktopShell, Login, NotFound} from "@/router/lazyPages.ts";
 
@@ -10,7 +10,7 @@ export const router = createBrowserRouter([
     },
     {path: "/403", element: lazyLoad(NotFound)},
     {
-        element: <RequireAuth/>,
+        element: <AuthBootstrap />,
         children: [
             {
                 path: "/",

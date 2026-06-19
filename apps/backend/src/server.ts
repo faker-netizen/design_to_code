@@ -12,6 +12,7 @@ import skillsRoutes from './routes/skills.js';
 import chatpdfRoutes from './routes/chatpdf.js';
 import agentMinRoutes from './routes/agentMin.js';
 import authRoutes from './routes/auth.js';
+import studioRoutes from './routes/studio.js';
 import { requireAuth } from './middleware/requireAuth.js';
 
 dotenv.config();
@@ -64,6 +65,7 @@ app.use('/api/chat', requireAuth, chatRoutes);
 app.use('/api/skills', requireAuth, skillsRoutes);
 app.use('/api/chatpdf', requireAuth, chatpdfRoutes);
 app.use('/api/agent', requireAuth, agentMinRoutes);
+app.use('/api/studio', requireAuth, studioRoutes);
 
 // 错误处理中间件
 app.use((err: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
@@ -101,6 +103,7 @@ async function startServer() {
       console.log(`RAG API: http://localhost:${PORT}/api/rag`);
       console.log(`Chat API: http://localhost:${PORT}/api/chat`);
       console.log(`Min Agent (tool_calls): http://localhost:${PORT}/api/agent/min`);
+      console.log(`Studio API: http://localhost:${PORT}/api/studio`);
     });
   } catch (error) {
     console.error('服务器启动失败:', error);

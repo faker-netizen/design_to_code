@@ -1,15 +1,28 @@
 # 项目现状（新会话请先读此文件）
 
-> 最后更新：2026-06-01
+> 最后更新：2026-05-31
 
 ## 一句话
 
-**文档 AI 工作平台**：RAG + 知识库 + 桌面壳 + **知识库 Finder** 已有；**GitHub CI + Playwright E2E** 已接入。**产品核心**仍是「平台内文档 + 用户输入 → 业务域 Skill（Tool Call）→ 反馈」— **F-00 尚未开工**。
+**AI 工作平台**：并行主线 **F-20 Studio 编排**（搜资料 → 多步 Worker → 产物）；**Chat / 知识库** 是独立的文档问答与存储能力，不是 Studio 的同义词。
 
 ## 产品方向（必读）
 
 → [功能规划 FEATURE-PLAN.md](../planning/FEATURE-PLAN.md)  
-→ [方向决策](../memory/project-decisions.md#2026-05--产品方向文档-ai-工作平台)
+→ [F-20 方案](../planning/feat-studio-orchestration-platform/README.md)  
+→ [方向决策](../memory/project-decisions.md#2026-05-31--f-20-studio-编排工作台方向)
+
+## F-20 Studio（当前主线）
+
+| 阶段 | 状态 | 说明 |
+|------|------|------|
+| P0 | ✅ | LangGraph Executor、SSE、Material 外置、Project CRUD |
+| P1 | ✅ | `plannerAgent`、SearchWorker ReAct、react_trace |
+| P2 | ✅ | Summarize Map-Reduce、Script/Chat/Critic、`contextStrategy` |
+| P3 | ✅ | Dock `studio`、Tab UI、产物编辑/导出、E2E spec |
+| P4 | 🟡 | MemorySaver、trim_messages、env Web/URL、结构化日志 |
+
+→ 存档：[log/2026-05-31-f-20-studio-p0-p4.md](./log/2026-05-31-f-20-studio-p0-p4.md)
 
 ## 已完成（技术底座）
 
@@ -22,29 +35,32 @@
 | [log/2026-05-macos-desktop-shell.md](./log/2026-05-macos-desktop-shell.md) | macOS 桌面壳 |
 | [log/2026-05-ai-harness.md](./log/2026-05-ai-harness.md) | 开发侧 AI harness |
 | [log/2026-05-product-pivot-doc-platform.md](./log/2026-05-product-pivot-doc-platform.md) | 产品方向 → 文档 AI 平台 |
-| [log/2026-06-ci-e2e-kb-finder.md](./log/2026-06-ci-e2e-kb-finder.md) | **KB Finder、Playwright E2E、GitHub CI、Backend ESLint** |
+| [log/2026-06-ci-e2e-kb-finder.md](./log/2026-06-ci-e2e-kb-finder.md) | KB Finder、Playwright E2E、GitHub CI |
+| [log/2026-05-31-f-20-studio-p0-p4.md](./log/2026-05-31-f-20-studio-p0-p4.md) | **F-20 Studio P0～P4 实现** |
 
 ## 进行中
 
-- **产品：** 业务域 Skill 框架（F-00）、ChatPDF（F-05）等 — 见 FEATURE-PLAN
+- **F-20**：人工验收、缺口迭代（见上表 🟡）
+- **F-00**：业务域 Skill 框架（与 Studio Worker 工具层收敛）
+- **F-05 ChatPDF**：阅读 UI 已降级，代码保留 upload
 
-## 已搁置（方案已落盘）
+## 已搁置
 
-- **F-13 Android 客户端** — 远程 WebView 壳 → 后期 Hybrid；见 `.ai/planning/feat-f-13-android-webview-shell/`
+- **F-13 Android** — WebView 壳；RN MVP 见 `apps/mobile`
 
-## 下一步建议（按新方向）
+## 下一步建议
 
-- [ ] 对齐 F-00：Skill 注册表、Tool Call 层、文档 scope、域路由
-- [ ] 做 1～2 个示例业务域 Skill 原型（如通用文档问答）
-- [ ] 演进 `chat` 为 Skill 执行入口；`chatService` refactor
-- [ ] 工程债：前端 `max-lines-per-function` ≤80（大页面拆分后启用）
+- [ ] 手动验收：Studio 建 Project → 绑 KB → Run → Trace → 导出摘要
+- [ ] 跑 E2E：`e2e/tests/integration/studio-run-summary.spec.ts`
+- [ ] F-20 增强：`rag_select`、Checkpoint 持久化、Chat 真流式
+- [ ] F-00：Skill 注册表与 Studio Tool 白名单对齐
+- [ ] 工程债：`MacSidebar.tsx` React 类型（全仓 tsc）；前端 `max-lines-per-function`
 
 ## 本地跑起来
 
 ```bash
 pnpm dev
-pnpm lint
-pnpm build
+pnpm -C apps/backend lint
 pnpm test:e2e:smoke      # 需 e2e/.env + MySQL
 ```
 
@@ -53,8 +69,8 @@ pnpm test:e2e:smoke      # 需 e2e/.env + MySQL
 | 区域 | 路径 |
 |------|------|
 | **功能规划** | `.ai/planning/FEATURE-PLAN.md` |
-| **CI** | `.github/workflows/ci.yml` |
-| **E2E** | `e2e/`、`e2e/README.md` |
-| RAG / 聊天 | `ragService.ts`、`chatService.ts` |
-| 文档 / KB | `documentService.ts`、`KnowledgeBaseFinder.tsx` |
-| 桌面壳 | `apps/web/src/desktop/` |
+| **F-20 方案** | `.ai/planning/feat-studio-orchestration-platform/` |
+| **Studio 后端** | `apps/backend/src/studio/` |
+| **Studio 前端** | `apps/web/src/pages/studio/` |
+| 桌面壳 | `apps/web/src/desktop/appRegistry.tsx` |
+| E2E | `e2e/tests/integration/studio-run-summary.spec.ts` |

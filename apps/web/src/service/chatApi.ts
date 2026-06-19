@@ -1,7 +1,8 @@
 import http from "@/service/request.ts";
 import {apiBase, refreshAccessToken} from "@/service/authRefresh.ts";
 import {getAccessToken} from "@/service/token.ts";
-import {fetchSsePost} from "@/service/sseClient.ts";
+import {readChatUiMessageStream} from "@/vercelAi/chatTransport.ts";
+import type {ChatUIMessage} from "@/vercelAi/chatTypes.ts";
 
 export type ChatSession = {
     id: number;
@@ -76,7 +77,7 @@ export type StreamChatHandlers = {
     onDone: (p: SendMessageResult) => void;
 };
 
-/** POST /api/chat/sessions/:id/messages — SSE */
+/** POST /api/chat/sessions/:id/messages — Vercel AI SDK UI Message Stream */
 export async function streamChatMessage(
     sessionId: number,
     content: string,
@@ -87,35 +88,78 @@ export async function streamChatMessage(
     const body: {content: string; skillId?: string | null} = {content};
     if (options?.skillId !== undefined) body.skillId = options.skillId;
 
-    await fetchSsePost(
-        url,
-        body,
-        (event, data) => {
-            if (event === "meta") handlers.onMeta({userMessageId: Number(data.userMessageId)});
-            else if (event === "skill")
-                handlers.onSkill?.({
-                    skillId: String(data.skillId ?? ""),
-                    skillName: String(data.skillName ?? ""),
-                });
-            else if (event === "sources")
-                handlers.onSources({sources: (data.sources as ChatSource[] | null) ?? null});
-            else if (event === "token") handlers.onToken({text: String(data.text ?? "")});
-            else if (event === "error") handlers.onError({message: String(data.message ?? "")});
-            else if (event === "aborted") handlers.onAborted?.({stopped: Boolean(data.stopped)});
-            else if (event === "done") {
-                handlers.onDone({
-                    userMessageId: Number(data.userMessageId),
-                    assistantMessageId: Number(data.assistantMessageId),
-                    answer: String(data.answer ?? ""),
-                    sources: (data.sources as ChatSource[] | null) ?? null,
-                });
+    const run = async (retried: boolean): Promise<void> => {
+        const token = getAccessToken();
+        const headers: Record<string, string> = {"Content-Type": "application/json"};
+        if (token) headers.Authorization = `Bearer ${token}`;
+
+        try {
+            const res = await fetch(url, {
+                method: "POST",
+                credentials: "include",
+                headers,
+                body: JSON.stringify(body),
+                signal: options?.signal,
+            });
+
+            if (res.status === 401 && !retried) {
+                const ok = await refreshAccessToken();
+                if (ok) return run(true);
+                throw new Error("登录已过期，请重新登录");
             }
-        },
-        {
-            getToken: getAccessToken,
-            refreshToken: refreshAccessToken,
-            signal: options?.signal,
-            onStatus: handlers.onStatus,
+
+            if (!res.ok || !res.body) {
+                const t = await res.text().catch(() => "");
+                let errMsg = `请求失败(${res.status})`;
+                if (t) {
+                    try {
+                        const j = JSON.parse(t) as {error?: string; message?: string};
+                        errMsg = j.error || j.message || errMsg;
+                    } catch {
+                        errMsg = t;
+                    }
+                }
+                throw new Error(errMsg);
+            }
+
+            let lastText = "";
+            let metaHandled = false;
+            let doneHandled = false;
+
+            const onMessage = (message: ChatUIMessage) => {
+                for (const part of message.parts) {
+                    if (part.type === "data-meta" && !metaHandled) {
+                        metaHandled = true;
+                        handlers.onMeta(part.data);
+                    } else if (part.type === "data-skill") {
+                        handlers.onSkill?.(part.data);
+                    } else if (part.type === "data-status") {
+                        handlers.onStatus?.(part.data);
+                    } else if (part.type === "data-sources") {
+                        handlers.onSources(part.data);
+                    } else if (part.type === "data-error") {
+                        handlers.onError(part.data);
+                    } else if (part.type === "data-aborted") {
+                        handlers.onAborted?.(part.data);
+                    } else if (part.type === "data-done" && !doneHandled) {
+                        doneHandled = true;
+                        handlers.onDone(part.data);
+                    } else if (part.type === "text") {
+                        const full = part.text;
+                        const delta = full.slice(lastText.length);
+                        if (delta) handlers.onToken({text: delta});
+                        lastText = full;
+                    }
+                }
+            };
+
+            await readChatUiMessageStream(res.body, onMessage);
+        } catch (e) {
+            if (options?.signal?.aborted) throw e;
+            if (e instanceof Error && e.name === "AbortError") throw e;
+            throw e;
         }
-    );
+    };
+
+    await run(false);
 }

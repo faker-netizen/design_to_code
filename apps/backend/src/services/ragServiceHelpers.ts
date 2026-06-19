@@ -52,12 +52,7 @@ export function createLLM() {
     });
 }
 
-export function buildRagGenerationMessages(
-    query: string,
-    context: string,
-    history: RagChatHistory,
-    extraSystemPolicy?: string
-): (SystemMessage | HumanMessage | AIMessage)[] {
+export function buildRagSystemPrompt(extraSystemPolicy?: string): string {
     let systemText =
         "你是专业文档问答助手。主要依据【参考上下文】回答【当前问题】。\n" +
         "若用户为追问、对比或指代，可结合【对话历史】理解意图；技术细节须来自参考上下文或历史中助手已给出的、与文档一致的内容，不要编造。\n" +
@@ -65,6 +60,16 @@ export function buildRagGenerationMessages(
     if (extraSystemPolicy?.trim()) {
         systemText += `\n\n【本 Skill 附加要求】\n${extraSystemPolicy.trim()}`;
     }
+    return systemText;
+}
+
+export function buildRagGenerationMessages(
+    query: string,
+    context: string,
+    history: RagChatHistory,
+    extraSystemPolicy?: string
+): (SystemMessage | HumanMessage | AIMessage)[] {
+    const systemText = buildRagSystemPrompt(extraSystemPolicy);
     const msgs: (SystemMessage | HumanMessage | AIMessage)[] = [new SystemMessage(systemText)];
     for (const h of history) {
         if (h.role === "user") msgs.push(new HumanMessage(h.content));

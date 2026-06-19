@@ -1,13 +1,7 @@
 import express from "express";
 import chatService from "../services/chatService.js";
 import {parseRouteParamId, requireUserId} from "../utils/routeHelpers.js";
-import {SSE_HEARTBEAT_INTERVAL_MS} from "../services/serviceConstants.js";
-import {
-    bindRequestAbort,
-    createSseWriter,
-    setupSseResponse,
-    startSseHeartbeat,
-} from "../utils/sse.js";
+import {bindRequestAbort} from "../utils/sse.js";
 
 const router = express.Router();
 
@@ -122,7 +116,7 @@ router.get("/sessions/:sessionId/messages", async (req, res) => {
     }
 });
 
-/** POST /api/chat/sessions/:sessionId/messages  { content } — SSE：meta|sources|token|aborted|error|done */
+/** POST /api/chat/sessions/:sessionId/messages  { content } — Vercel AI SDK UI Message Stream */
 router.post("/sessions/:sessionId/messages", async (req, res) => {
     try {
         const userId = requireUserId(req, res);
@@ -141,21 +135,17 @@ router.post("/sessions/:sessionId/messages", async (req, res) => {
         const session = await chatService.getSession(userId, sessionId);
         if (!session) return res.status(404).json({error: "会话不存在"});
 
-        setupSseResponse(res);
         const {signal, cleanup} = bindRequestAbort(req);
-        const stopHeartbeat = startSseHeartbeat(res, SSE_HEARTBEAT_INTERVAL_MS);
-        const sse = createSseWriter(res);
+        res.on("close", cleanup);
 
-        try {
-            await chatService.appendMessage({userId, session, content, sse, signal, requestSkillId});
-        } catch (e) {
-            const message = e instanceof Error ? e.message : "发送失败";
-            sse("error", {message});
-        } finally {
-            stopHeartbeat();
-            cleanup();
-        }
-        res.end();
+        chatService.pipeAppendMessage({
+            res,
+            userId,
+            session,
+            content,
+            signal,
+            requestSkillId,
+        });
     } catch (e) {
         const msg = e instanceof Error ? e.message : "发送失败";
         if (msg.includes("消息内容不能为空")) {
@@ -164,8 +154,6 @@ router.post("/sessions/:sessionId/messages", async (req, res) => {
         console.error("append chat message failed:", e);
         if (!res.headersSent) {
             res.status(500).json({error: "发送消息失败"});
-        } else {
-            res.end();
         }
     }
 });

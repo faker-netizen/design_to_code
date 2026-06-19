@@ -19,6 +19,16 @@ export type ChatPdfDocument = {
     updated_at: string;
 };
 
+async function parseBlobError(blob: Blob): Promise<string> {
+    try {
+        const text = await blob.text();
+        const parsed = JSON.parse(text) as {error?: string; message?: string};
+        return parsed.error || parsed.message || text.slice(0, 200);
+    } catch {
+        return "无法读取 PDF 文件";
+    }
+}
+
 export async function listChatPdfDocuments(): Promise<ChatPdfDocument[]> {
     const res = await http.get<{success: boolean; documents: ChatPdfDocument[]}>(
         "/api/chatpdf/documents"
@@ -51,15 +61,46 @@ export async function fetchChatPdfSummary(documentId: number): Promise<PdfSummar
     }
 }
 
-export async function fetchChatPdfBlob(documentId: number): Promise<Blob> {
+async function fetchChatPdfBlobOnce(documentId: number): Promise<Blob> {
     const token = getAccessToken();
     const url = `${apiBase()}/api/chatpdf/documents/${documentId}/file`;
     const res = await axios.get<Blob>(url, {
         responseType: "blob",
         withCredentials: true,
+        validateStatus: () => true,
         headers: token ? {Authorization: `Bearer ${token}`} : {},
     });
-    return res.data;
+
+    if (res.status === 401) {
+        throw new Error("__UNAUTHORIZED__");
+    }
+
+    const blob = res.data;
+    const rawType = res.headers["content-type"];
+    let type = "";
+    if (typeof rawType === "string") type = rawType;
+    else if (Array.isArray(rawType)) type = rawType.join(";");
+    else type = String(blob.type ?? "");
+    if (res.status >= 400 || !type.includes("pdf")) {
+        throw new Error(await parseBlobError(blob));
+    }
+    if (blob.size < 1) {
+        throw new Error("PDF 文件为空");
+    }
+    return blob;
+}
+
+export async function fetchChatPdfBlob(documentId: number): Promise<Blob> {
+    try {
+        return await fetchChatPdfBlobOnce(documentId);
+    } catch (e) {
+        if (e instanceof Error && e.message === "__UNAUTHORIZED__") {
+            const ok = await refreshAccessToken();
+            if (ok) return fetchChatPdfBlobOnce(documentId);
+            throw new Error("未登录或登录已过期");
+        }
+        throw e;
+    }
 }
 
 export type SummarizeSseHandlers = {

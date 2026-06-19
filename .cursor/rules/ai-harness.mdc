@@ -1,6 +1,8 @@
 ---
+description: 
 alwaysApply: true
 ---
+
 # AI Harness 地图
 
 本仓库采用 **harness 工程**：Rules 约束、Skills 编排、Gates 验证、Git/CI 强制执行。
@@ -8,7 +10,7 @@ alwaysApply: true
 ## 目录职责
 
 | 路径 | 用途 |
-|------|------|
+|---|---|
 | `.cursor/rules/` | 自动注入的约束（短、硬） |
 | `.cursor/skills/` | 任务入口（何时做 + 步骤摘要） |
 | `.ai/workflows/` | 详细分步流程 |
@@ -24,7 +26,7 @@ alwaysApply: true
 ## 任务路由
 
 | 用户意图 | 阅读 workflow | Skills | Gates |
-|----------|---------------|--------|-------|
+|----|---|-----|----|
 | **新会话 / 续作 / 进度** | — | `project-progress` | — |
 | **功能规划 / roadmap / 做什么** | `.ai/planning/FEATURE-PLAN.md` | — | — |
 | **任何新任务 / 改需求** | `.ai/planning/README.md` | — | `tier-classification` |
@@ -57,7 +59,7 @@ alwaysApply: true
 - **ESLint AI Guardrails**（`eslint.ai-guardrails.mjs`，`--max-warnings=0`）：
 
 | 范围 | 函数行数 | 文件行数 | 参数 | 类/文件 | 魔法数字 |
-|------|----------|----------|------|---------|----------|
+|---|----|----|---|---|----|
 | `apps/backend` | ≤50 | ≤250 | ≤4 | 1 class | `src/services/**` |
 | `apps/web` + `packages/components` | ≤80 | ≤250 | ≤4 | 1 class | `src/service/**` |
 
@@ -67,7 +69,7 @@ alwaysApply: true
 ## 项目 Skills 清单（`.cursor/skills/`）
 
 | Skill | 用途 |
-|-------|------|
+|----|---|
 | `requirements-design` | 定级后 T1 lite / T2–T3 完整设计 |
 | `bugfix` | T0 Bug 修复 |
 | `feature-development` | 设计确认后的实现 |

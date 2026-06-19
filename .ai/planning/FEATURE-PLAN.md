@@ -1,6 +1,6 @@
 # 功能规划（文档 AI 工作平台）
 
-> 最后更新：2026-06-03  
+> 最后更新：2026-05-31  
 > **用途**：描述产品目标、模块边界与功能 backlog；新功能开发前先对齐本文。  
 > **与 progress 分工**：本文写「要做什么」；`progress/CURRENT.md` 写「做到哪了」。  
 > **方向说明**：由早期「Design to Code」转为以 **文档 AI 工作平台** 为主（仓库名 `design_to_code` 暂保留，产品定位以本文为准）。
@@ -12,6 +12,8 @@
 **文档 AI 工作平台**：用户将文档沉淀在平台内，通过 RAG、ChatPDF、对话与 Agent 能力进行阅读、问答与整理；系统根据用户输入，调用按 **业务域封装** 的 Skill（Tool Call 实现），在 **用户已有文档范围** 内给出可溯源的业务反馈。
 
 远期扩展：**外链内容采集**（公众号文章、其他平台 URL）→ 清洗入库 → 纳入同一套文档与 Skill 体系。
+
+**并行主线（F-20）**：**Agentic RAG 编排工作台（Studio）** — 用户配置 **搜什么（SearchProfile）** 与 **怎么处理（Workflow/Plan）**，运行时 **Planner–Executor Multi-Agent + ReAct Worker**，产出 **对话 / 摘要 / 短视频脚本**；**不做内置 PDF 阅读器**。详见 `.ai/planning/feat-studio-orchestration-platform/`。
 
 ---
 
@@ -110,7 +112,8 @@ Phase 4  验证：固定测例 + 对用户文档试跑 → 通过才「发布」
 | **RAG 对话** | 会话、流式、引用 | `pages/chat`（Dock） | `chatService` | ✅ 已有，将演进为域 Skill 入口 |
 | **业务域 Skill** | 域路由 + Tool Call + 文档 scope | 待设计 | **核心建设** | 📋 **P0** |
 | **Skill 工坊** | 女娲式创建/提炼/验证 → 注册表 | 待设计（Dock 或 KB 内） | `skillStudioService` 等 | 📋 **P1**（依赖 F-00） |
-| **ChatPDF** | PDF 阅读器 + 分点引用总结 | `pages/chatpdf` | `chatpdf` API、`document_pages` | 📋 **进行中** → `feat-f-05-chatpdf` |
+| **ChatPDF** | PDF 上传（阅读 UI 降级） | `pages/chatpdf` | `chatpdf` API | 🟡 **降级** → Dock 隐藏 |
+| **Studio 编排工作台** | SearchProfile + Plan/Run + Artifact | `pages/studio` | `studio/*` | ✅ **P0～P3 已实现** → `feat-studio-orchestration-platform` |
 | **Agent** | 多步工具调用 | `pages/agent` | agent 相关 | 🟡 部分，可复用于 Tool 层 |
 | **内容采集** | 公众号 / URL 抓取、清洗入库 | 未建 | 未建 | 📋 Phase 3 |
 | **Markdown 编辑** | 本地笔记 / 整理 | `pages/typora` | — | 🟡 可选 |
@@ -189,6 +192,11 @@ Phase 4  验证：固定测例 + 对用户文档试跑 → 通过才「发布」
 | F-11a | 向导创建 Skill 草稿 → 发布 | P1 | F-00 注册表 | MVP，无 KB 自动提炼 |
 | F-11b | KB 材料驱动提炼 + 确认停点 | P2 | F-11a、文档管线 | 类女娲 Phase 1–2 |
 | F-11c | 视角/顾问类 Skill + 强制 citation | P2 | F-11a、F-00b | 可选；公网调研非 MVP |
+| **F-20** | **Studio 编排工作台**（SearchProfile + Planner–Executor + ReAct Worker + Artifact） | **P0** | RAG、LangGraph、SSE | **P0～P4 MVP 已实现**；见 `04-implementation-plan.md` |
+| F-20a | 固定 Plan Executor + SSE + Material 外置 | P0 | F-20 | ✅ |
+| F-20b | Structured Planner + SearchWorker ReAct | P0 | F-20a | ✅ |
+| F-20c | Summarize/Script Map-Reduce + Studio UI | P1 | F-20b | ✅ |
+| F-20d | P4 增强（Checkpoint/trim/env 搜索） | P2 | F-20c | 🟡 MVP 完成，持久化待做 |
 | **F-12** | **文档索引 + 预摘要 + 全库概览 Skill**（上传默认仅入库、Finder 按钮、 `kb-catalog`） | **P1** | F-00、文档管线 | 规划：`feat-f-12-doc-index-summary`；取代原「仅 indexing_status」窄范围 |
 | F-07 | CI workflow | P2 | — | |
 | **F-13** | **Android 客户端（远程 WebView 壳 → 后期 Hybrid）** | **P2** | Web 可部署、mobile 布局 | **搁置**；仅 Android；`feat-f-13-android-webview-shell` |
@@ -205,8 +213,9 @@ Phase 4  验证：固定测例 + 对用户文档试跑 → 通过才「发布」
 
 | AppId | 标签 | 与核心能力关系 | 状态 |
 |-------|------|----------------|------|
-| `chat` | 智能对话 | **业务域 Skill 主入口** | ✅ |
-| `chatpdf` | ChatPDF | PDF 域 Skill / 工具 | 📋 |
+| `chat` | RAG 对话 | **业务域 Skill 主入口** | ✅ |
+| `studio` | Studio | **编排工作台**（SearchProfile、Run Trace、Artifact） | ✅ |
+| `chatpdf` | PDF 上传 | 资料上传（Dock 隐藏，不做阅读主入口） | 🟡 |
 | `knowledge-bases` | 知识库 | 文档与 scope 管理 | 📋 |
 | `agent` | Agent | 多步 Tool，可与域 Skill 互补 | 📋 |
 | `import` | 内容采集 | Phase 3，外链入库 | ⬜ 未注册 |
@@ -225,6 +234,9 @@ Phase 4  验证：固定测例 + 对用户文档试跑 → 通过才「发布」
 | **文档索引** | 文本分块 + 向量写入 `embeddings`；与「分片上传」无关；非所有入库文档都必须索引 |
 | **Skill 工坊** | 创建/迭代/验证业务域 Skill 定义的产品模块（流程借鉴开源女娲） |
 | **Skill 定义** | 可版本化的配置：名称、描述、system 策略、可用 tools、默认 scope、测例 |
+| **SearchProfile** | 用户配置的检索范围：KB、query、URL、web 限制、contextStrategy |
+| **Plan / Run** | Planner 产出的步骤图；Run 为一次执行实例，含 Trace 与 Artifact |
+| **Worker Handoff** | 步骤间结构化简报 JSON，非长链 natural-language 传递 |
 
 ---
 

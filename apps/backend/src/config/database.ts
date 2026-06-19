@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import {migrateDocumentsIndexSummary} from './migrateDocumentsIndexSummary.js';
 import {migrateChatPdfSchema} from './migrateChatPdfSchema.js';
 import {migrateKnowledgeBaseSchema} from './migrateKnowledgeBaseSchema.js';
+import {migrateStudioSchema} from './migrateStudioSchema.js';
 import {createChatAndUploadTables} from './databaseChatUploadTables.js';
 
 dotenv.config();
@@ -121,6 +122,7 @@ export const initializeTables = async (): Promise<void> => {
     await migrateKnowledgeBaseSchema(connection);
     await migrateDocumentsIndexSummary(connection);
     await migrateChatPdfSchema(connection);
+    await migrateStudioSchema(connection);
     await createChatAndUploadTables(connection);
     await seedAdminUser(connection);
 

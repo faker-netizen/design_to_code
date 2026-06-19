@@ -2,23 +2,19 @@ import {RecursiveCharacterTextSplitter} from "@langchain/textsplitters";
 import VectorIndex from "../config/vectorIndex.js";
 import {Document} from "@langchain/core/documents";
 import pool from "../config/database.js";
-import {HumanMessage, AIMessage, SystemMessage, AIMessageChunk} from "@langchain/core/messages";
 import {invokeRagRetrievalGraph} from "../ragAgent/ragRetrievalGraph.js";
-import {truncateChatContent} from "../utils/chatHistory.js";
+import {buildRagUserContent, streamPlainChatDeltas, streamRagChatDeltas} from "../ai/index.js";
 import {
     INGEST_CHUNK_OVERLAP,
     INGEST_CHUNK_SIZE,
-    RAG_CONTEXT_MAX_CHARS,
     SCORE_DECIMAL_PLACES,
 } from "./serviceConstants.js";
 import {
     buildEmbeddingScopeFilter,
-    buildRagGenerationMessages,
-    createLLM,
+    buildRagSystemPrompt,
     defaultMinScore,
     defaultRetrievalK,
     embeddingCandidateLimit,
-    messageChunkToText,
     scoreEmbeddingCandidates,
     validateEmbeddingBatch,
     type RagChatHistory,
@@ -216,21 +212,19 @@ class RAGService {
         history: RagChatHistory,
         streamOpts: {signal?: AbortSignal; extraSystemPolicy?: string}
     ): AsyncGenerator<RagStreamPart> {
-        const llm = createLLM();
         const context = chunks
             .map((c, i) => `片段${i + 1}(score=${c.score.toFixed(SCORE_DECIMAL_PLACES)}):\n${c.content}`)
             .join("\n\n");
-        const messages = buildRagGenerationMessages(
-            query,
-            context,
-            history,
-            streamOpts.extraSystemPolicy
-        );
+        const systemText = buildRagSystemPrompt(streamOpts.extraSystemPolicy);
+        const userContent = buildRagUserContent(query, context);
 
         try {
-            const stream = await llm.stream(messages, {signal: streamOpts.signal});
-            for await (const chunk of stream) {
-                const text = messageChunkToText(chunk as AIMessageChunk);
+            for await (const text of streamRagChatDeltas({
+                system: systemText,
+                userContent,
+                history,
+                signal: streamOpts.signal,
+            })) {
                 if (text) yield {type: "token", text};
             }
         } catch (error) {
@@ -245,22 +239,19 @@ class RAGService {
         signal?: AbortSignal,
         options?: {ragFallback?: boolean}
     ): AsyncGenerator<string> {
-        const llm = createLLM();
         const systemText = options?.ragFallback
             ? "你是友好、简洁的中文助手。当前知识库未检索到足够相关的文档片段，请结合【对话历史】与用户问题作答；" +
               "不要编造文档或引用来源，可说明未在知识库中找到直接依据，再基于常识与上下文尽量有帮助地回复。"
             : "你是友好、简洁的中文助手。回答要有帮助、可读。";
-        const msgs: (SystemMessage | HumanMessage | AIMessage)[] = [new SystemMessage(systemText)];
-        for (const h of history) {
-            if (h.role === "user") msgs.push(new HumanMessage(h.content));
-            else msgs.push(new AIMessage(truncateChatContent(h.content, RAG_CONTEXT_MAX_CHARS)));
-        }
-        msgs.push(new HumanMessage(userMessage));
         try {
-            const stream = await llm.stream(msgs, {signal});
-            for await (const chunk of stream) {
-                const text = messageChunkToText(chunk as AIMessageChunk);
-                if (text) yield text;
+            for await (const delta of streamPlainChatDeltas({
+                system: systemText,
+                userMessage,
+                history,
+                signal,
+                truncateAssistant: true,
+            })) {
+                yield delta;
             }
         } catch (error) {
             console.error("[RAG] streamChatPlain failed:", error);

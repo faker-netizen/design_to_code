@@ -61,10 +61,26 @@
 
 ## 2026-06 — F-13 Android 客户端：搁置与路线
 
-- **决策：** Android 客户端 **本期搁置**；方案落盘于 `feat-f-13-android-webview-shell`。**首期**采用 **薄 WebView 壳加载线上已部署 Web**；**后期**可迁 **Capacitor 内嵌 H5**。**不做** React Native 首期、**不做** iOS。
+- **决策（2026-06 初）：** Android 客户端 **本期搁置**；方案落盘于 `feat-f-13-android-webview-shell`。**首期**采用 **薄 WebView 壳加载线上已部署 Web**；**后期**可迁 **Capacitor 内嵌 H5**。**不做** React Native 首期、**不做** iOS。
+- **更新（2026-05-31）：** 新增 **`apps/mobile`**（Expo SDK 52 + expo-router）作为 **React Native MVP**，直连 `apps/backend`（登录、对话 SSE、知识库列表）。WebView 壳方案仍保留文档，但移动端实现以 RN 为主。
 - **原因：** 优先 Web 主线（F-00 / F-05 / F-12）；远程壳实现成本最低；内嵌 Hybrid 与 JS Bridge 留待 mobile 布局与部署稳定后再做。
 - **迁移认知：** 远程壳 → 内嵌 Hybrid 的主线是 **构建产物打包 + 发布流程 + API/路由在 WebView 内验通**；JS Bridge 仅在需要原生能力（文件、推送等）时增量接入，非迁移唯一工作。
 - **参考：** `.ai/planning/feat-f-13-android-webview-shell/`
+
+## 2026-05-31 — C 端免强制登录
+
+- **决策：** Web **不强制跳转登录**；首访自动 `POST /api/auth/guest` 创建访客并签发 JWT；登录/注册为**可选**（同步项目与历史）。
+- **实现：** 前端 `AuthBootstrap`；后端 `createGuestUser`（`guest_*@guest.local`）；MenuBar 访客显示「登录」，已登录显示「退出」并回访客态。
+- **API：** 业务路由仍带 Bearer token（访客 token 与正式用户同等隔离）。
+
+## 2026-05-31 — F-20 Studio 编排工作台方向
+
+- **决策：** 新增 **通用 AI 编排工作台（Studio）** 作为与 F-00 并行的产品主线：用户配置 **SearchProfile（搜什么）** + **Workflow/Plan（怎么处理）**；运行时 **Planner–Executor Multi-Agent**，Worker 内 **ReAct**；产出 **对话 / 摘要 / 短视频脚本（MVP 不出 MP4）**。
+- **不做：** 内置 PDF 阅读器；ChatPDF **降级**为可选上传入库，不作为阅读入口。
+- **上下文：** 采用 **行业成熟组合**（RAG、Map-Reduce、LangGraph State/Checkpoint、Letta 式 Core/Recall/Archival、trim_messages、Handoff JSON）；不自研完整 memory OS。
+- **与 F-00：** F-20 为上层编排；F-00 为 Worker Tool / scope 执行层，可复用。
+- **定级：** T3（待用户确认）；方案落盘于 `.ai/planning/feat-studio-orchestration-platform/`。
+- **参考：** `01-requirements.md`、`02-solution-design.md`、`03-context-management.md`、`04-implementation-plan.md`
 
 ## 2026-05 — Cursor MCP（Context7 + Playwright）
 

@@ -1,22 +1,9 @@
 import {expect, test} from "@playwright/test";
 import {loginViaApi} from "../../helpers/auth";
 import {getE2eCredentials} from "../../helpers/env";
+import {buildMockChatUiStreamBody, MOCK_REPLY} from "../../helpers/mockChatUiStream";
 
-const MOCK_REPLY = "E2E mock assistant reply";
-
-function buildMockSseBody(userMessageId = 1, assistantMessageId = 2): string {
-    const events = [
-        ["meta", {userMessageId}],
-        ["sources", {sources: null}],
-        ["token", {text: MOCK_REPLY}],
-        ["done", {userMessageId, assistantMessageId, answer: MOCK_REPLY, sources: null}],
-    ];
-    return events
-        .map(([event, data]) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
-        .join("");
-}
-
-test.describe("聊天 SSE @integration", () => {
+test.describe("聊天 AI SDK 流 @integration", () => {
     test.beforeEach(({page: _page}, testInfo) => {
         if (!getE2eCredentials()) {
             testInfo.skip(true, "缺少 E2E_USER_EMAIL / E2E_USER_PASSWORD");
@@ -34,10 +21,11 @@ test.describe("聊天 SSE @integration", () => {
             await route.fulfill({
                 status: 200,
                 headers: {
-                    "Content-Type": "text/event-stream; charset=utf-8",
+                    "Content-Type": "text/event-stream",
                     "Cache-Control": "no-cache",
+                    "x-vercel-ai-ui-message-stream": "v1",
                 },
-                body: buildMockSseBody(),
+                body: buildMockChatUiStreamBody(),
             });
         });
     });

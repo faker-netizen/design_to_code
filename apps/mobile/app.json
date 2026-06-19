@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "文档 AI",
+    "slug": "d2c-mobile",
+    "version": "0.0.1",
+    "orientation": "portrait",
+    "scheme": "d2c",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.d2c.mobile"
+    },
+    "android": {
+      "package": "com.d2c.mobile"
+    },
+    "plugins": ["expo-router", "expo-secure-store"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

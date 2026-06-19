@@ -24,6 +24,13 @@ import {
  */
 export type AuthUser = { id: number; email: string };
 
+/** 访客账号邮箱后缀（C 端免登录会话） */
+export const GUEST_EMAIL_SUFFIX = "@guest.local";
+
+export function isGuestEmail(email: string): boolean {
+    return email.toLowerCase().endsWith(GUEST_EMAIL_SUFFIX);
+}
+
 /**
  * 定义数据库用户行类型
  */
@@ -107,6 +114,17 @@ function normalizeEmail(email: string): string {
  * 注册新用户（邮箱唯一、密码 bcrypt）
  * @returns ok + user，或 duplicate / invalid_input
  */
+/** 创建访客用户并签发 token（C 端无需注册即可使用） */
+export async function createGuestUser(): Promise<AuthUser> {
+    const email = `guest_${randomJti()}${GUEST_EMAIL_SUFFIX}`;
+    const passwordHash = await bcrypt.hash(randomToken(REFRESH_TOKEN_RAW_BYTES), BCRYPT_COST);
+    const [result] = await pool.query<ResultSetHeader>(
+        "INSERT INTO users (email, password_hash) VALUES (?, ?)",
+        [email, passwordHash]
+    );
+    return {id: result.insertId, email};
+}
+
 export async function registerUser(
     emailRaw: string,
     passwordRaw: string

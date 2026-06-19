@@ -1,0 +1,50 @@
+---
+alwaysApply: true
+---
+# AI Harness 地图 — {{PROJECT_NAME}}
+
+本仓库采用 **harness 工程**：Rules 约束、Skills 编排、Gates 验证、Git/CI 强制执行。
+
+## 目录职责
+
+| 路径 | 用途 |
+|------|------|
+| `.cursor/rules/` | 自动注入的约束 |
+| `.cursor/skills/` | 任务入口 |
+| `.ai/workflows/` | 详细流程 |
+| `.ai/gates/` | 完成前检查清单 |
+| `.ai/templates/` | 产出物模板 |
+| `.ai/memory/` | 决策与踩坑 |
+| `.ai/progress/` | **续作入口** `CURRENT.md` |
+| `.ai/planning/` | FEATURE-PLAN + T1–T3 落盘 |
+| `.ai/fixes/` | T0 Bug 落盘 |
+
+## 任务路由
+
+| 用户意图 | Workflow | Skill | Gate |
+|----------|----------|-------|------|
+| 续作 / 进度 | — | `project-progress` | — |
+| 功能规划 | `FEATURE-PLAN.md` | — | — |
+| 新任务 | `planning/README.md` | — | `tier-classification` |
+| 需求 / 方案 | `requirements-design.md` | `requirements-design` | 设计 review |
+| 实现 | `feature-development.md` | `feature-development` | `pre-implementation` |
+| Bug T0 | `bugfix.md` | `bugfix` | `tier-classification` |
+| Git 提交 | — | `commit-workflow` | `code-quality` |
+| 维护 harness | — | `harness-engineering` | — |
+
+## Agent 协议
+
+1. **续作** — 先读 `.ai/progress/CURRENT.md`
+2. **开始** — 定级 ⏸ → 落盘 → workflow
+3. **实现** — 遵循 `.cursor/rules/*.mdc`
+4. **验证** — `.ai/gates/`，lint/build
+5. **记忆** — 新踩坑 → `common-failures.md`
+6. **存档** — commit 后 `progress/log/` + 更新 CURRENT
+
+## 项目路径（monorepo 默认）
+
+- Web：`{{WEB_APP_PATH}}`
+- Backend：`{{BACKEND_APP_PATH}}`
+- Packages：`{{PACKAGES_GLOB}}`
+
+按实际结构调整 `ai-harness.mdc` 与 `eslint` 路径。

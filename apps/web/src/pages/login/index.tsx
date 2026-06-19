@@ -3,7 +3,7 @@ import {UserOutlined, LockOutlined} from "@ant-design/icons";
 import {useLocation, useNavigate} from "react-router-dom";
 import {useEffect, useState} from "react";
 import {login} from "@/service/authService.ts";
-import {getAccessToken, setAccessToken} from "@/service/token.ts";
+import {getAccessToken, isGuestSession} from "@/service/token.ts";
 import {RequestError} from "@/service/request.ts";
 import {DisplayHeading, GlassSurface} from "@/components/shell";
 
@@ -24,7 +24,7 @@ export default function LoginPage() {
     const from = safeReturnPath((location.state as {from?: string} | null)?.from ?? "/");
 
     useEffect(() => {
-        if (getAccessToken()) {
+        if (getAccessToken() && !isGuestSession()) {
             navigate(from, {replace: true});
         }
     }, [from, navigate]);
@@ -33,7 +33,6 @@ export default function LoginPage() {
         setSubmitting(true);
         try {
             const data = await login(values.email.trim(), values.password);
-            setAccessToken(data.accessToken);
             message.success(`欢迎，${data.user.email}`);
             navigate(from, {replace: true});
         } catch (e) {
@@ -49,8 +48,8 @@ export default function LoginPage() {
             <div className="login-page__card">
                 <GlassSurface variant="strong" padding="lg">
                     <div className="login-page__card-inner">
-                        <DisplayHeading level={2} align="center" subtitle="使用已注册的邮箱与密码登录">
-                            欢迎回来
+                        <DisplayHeading level={2} align="center" subtitle="登录后可同步项目与历史；不登录也可先体验">
+                            登录 / 注册
                         </DisplayHeading>
 
                         <Form<LoginForm>
@@ -86,11 +85,14 @@ export default function LoginPage() {
                                 />
                             </Form.Item>
 
-                            <Form.Item style={{marginBottom: 0}}>
+                            <Form.Item style={{marginBottom: 8}}>
                                 <Button type="primary" htmlType="submit" block size="large" loading={submitting}>
                                     登录
                                 </Button>
                             </Form.Item>
+                            <Button type="link" block onClick={() => navigate("/")}>
+                                暂不登录，继续体验
+                            </Button>
                         </Form>
                     </div>
                 </GlassSurface>

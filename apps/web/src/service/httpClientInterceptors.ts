@@ -4,6 +4,7 @@ import axios, {
     type InternalAxiosRequestConfig,
 } from "axios";
 import {clearAuth, getAccessToken, setAccessToken} from "@/service/token.ts";
+import {startGuestSession} from "@/service/guestSession.ts";
 import {
     DEFAULT_RETRY_DELAY_MS,
     RETRYABLE_STATUS_CODES,
@@ -92,10 +93,15 @@ async function handle401Refresh(
         return instance.request(config);
     } catch (refreshErr) {
         clearAuth();
-        window.dispatchEvent(new CustomEvent("auth:logout"));
-        return Promise.reject(
-            new RequestError("登录已过期，请重新登录", {status: 401, raw: refreshErr})
-        );
+        try {
+            await startGuestSession();
+            return instance.request(config);
+        } catch {
+            window.dispatchEvent(new CustomEvent("auth:logout"));
+            return Promise.reject(
+                new RequestError("会话已失效，请刷新页面", {status: 401, raw: refreshErr})
+            );
+        }
     }
 }
 

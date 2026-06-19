@@ -1,5 +1,5 @@
 import {lazy, type ComponentType, type LazyExoticComponent} from "react";
-import {FilePdfOutlined, FolderFilled, MessageOutlined} from "@ant-design/icons";
+import {AppstoreOutlined, FilePdfOutlined, FolderFilled, MessageOutlined} from "@ant-design/icons";
 import type {AppId, AppWindowPolicy, DockAppDef} from "./types.ts";
 
 /** 仅出现在 Dock 中的应用 */
@@ -13,18 +13,26 @@ export const DOCK_APPS: DockAppDef[] = [
         windowPolicy: {maxInstances: 1},
     },
     {
-        id: "chatpdf",
-        label: "ChatPDF",
+        id: "studio",
+        label: "Studio",
         available: true,
-        defaultTitle: "ChatPDF",
-        defaultSize: {width: 960, height: 640},
-        windowPolicy: {dedupeByMeta: "documentId"},
+        defaultTitle: "Studio",
+        defaultSize: {width: 1000, height: 680},
+        windowPolicy: {maxInstances: 1},
     },
 ];
 
-/** 所有可开窗应用（含桌面知识库 Finder） */
+/** 所有可开窗应用（含桌面知识库 Finder、已下架 Dock 项） */
 const WINDOW_APP_DEFS: DockAppDef[] = [
     ...DOCK_APPS,
+    {
+        id: "chatpdf",
+        label: "PDF 上传",
+        available: false,
+        defaultTitle: "PDF 上传",
+        defaultSize: {width: 960, height: 640},
+        windowPolicy: {dedupeByMeta: "documentId"},
+    },
     {
         id: "kb-finder",
         label: "知识库",
@@ -37,12 +45,14 @@ const WINDOW_APP_DEFS: DockAppDef[] = [
 
 export const DOCK_ICONS: Partial<Record<AppId, ComponentType<{className?: string}>>> = {
     chat: MessageOutlined,
+    studio: AppstoreOutlined,
     chatpdf: FilePdfOutlined,
     "kb-finder": FolderFilled,
 };
 
 export const APP_COMPONENTS: Partial<Record<AppId, LazyExoticComponent<ComponentType>>> = {
     chat: lazy(() => import("@/pages/chat/index.tsx")),
+    studio: lazy(() => import("@/pages/studio/index.tsx")),
     chatpdf: lazy(() => import("@/pages/chatpdf/index.tsx")),
     "kb-finder": lazy(() => import("@/pages/knowledge-bases/KnowledgeBaseFinder.tsx")),
 };

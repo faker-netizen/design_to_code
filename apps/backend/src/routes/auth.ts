@@ -6,15 +6,39 @@ import {
     issueTokenPair,
     rotateRefreshToken,
     revokeRefreshToken,
+    createGuestUser,
+    isGuestEmail,
 } from "../services/authService.js";
 
 const router = express.Router();
 
+/** C 端：无账号时自动创建访客并签发 token */
+router.post("/guest", async (_req, res) => {
+    try {
+        const user = await createGuestUser();
+        const {accessToken, refreshToken, refreshExpiresAt} = await issueTokenPair(user);
+        res.cookie(authConfig.refreshCookieName, refreshToken, {
+            httpOnly: true,
+            secure: authConfig.cookieSecure,
+            sameSite: authConfig.cookieSameSite,
+            expires: refreshExpiresAt,
+            path: "/api/auth",
+        });
+        return res.status(201).json({
+            success: true,
+            accessToken,
+            user: {id: user.id, email: user.email},
+            guest: true,
+        });
+    } catch (error) {
+        console.error("guest session failed:", error);
+        return res.status(500).json({error: "创建访客会话失败"});
+    }
+});
+
 router.post("/login", async (req, res) => {
     try {
         const {email, password} = req.body ?? {};
-
-        console.log(email,password)
         if (!email || !password) {
             return res.status(400).json({error: "email/password 不能为空"});
         }
@@ -34,11 +58,16 @@ router.post("/login", async (req, res) => {
             path: "/api/auth",
         });
 
-        return res.json({
+        const body: Record<string, unknown> = {
             success: true,
             accessToken,
             user: {id: user.id, email: user.email},
-        });
+            guest: isGuestEmail(user.email),
+        };
+        if (req.get("X-D2C-Client") === "mobile") {
+            body.refreshToken = refreshToken;
+        }
+        return res.json(body);
     } catch (error) {
         console.error("login failed:", error);
         return res.status(500).json({error: "登录失败"});
@@ -65,11 +94,15 @@ router.post("/refresh", async (req, res) => {
             path: "/api/auth",
         });
 
-        return res.json({
+        const body: Record<string, unknown> = {
             success: true,
             accessToken: rotated.accessToken,
             user: {id: rotated.user.id, email: rotated.user.email},
-        });
+        };
+        if (req.get("X-D2C-Client") === "mobile") {
+            body.refreshToken = rotated.refreshToken;
+        }
+        return res.json(body);
     } catch (error) {
         console.error("refresh failed:", error);
         return res.status(500).json({error: "刷新失败"});
@@ -127,6 +160,7 @@ router.post("/register", async (req, res) => {
             success: true,
             accessToken,
             user: {id: created.user.id, email: created.user.email},
+            guest: false,
         });
     } catch (err) {
         console.error("register failed:", err);

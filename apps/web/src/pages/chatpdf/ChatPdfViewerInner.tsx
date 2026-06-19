@@ -29,12 +29,12 @@ const ChatPdfViewerInner = forwardRef<ChatPdfViewerHandle, ChatPdfViewerInnerPro
             let cancelled = false;
             void fetchChatPdfBlob(documentId)
                 .then((blob) => {
-                    console.log(blob)
                     if (cancelled) return;
                     const url = URL.createObjectURL(blob);
                     revoke = url;
                     setBlobUrl(url);
                     setPage(1);
+                    setNumPages(0);
                     setLoading(false);
                 })
                 .catch((e) => {
@@ -89,7 +89,13 @@ const ChatPdfViewerInner = forwardRef<ChatPdfViewerHandle, ChatPdfViewerInnerPro
                     </button>
                 </div>
                 <div className="chatpdf-viewer__doc">
-                    <Document file={blobUrl} onLoadSuccess={(d) => setNumPages(d.numPages)}>
+                    <Document
+                        file={blobUrl}
+                        onLoadSuccess={(d) => setNumPages(d.numPages)}
+                        onLoadError={(err) => {
+                            message.error(err?.message || "PDF 渲染失败，请重新上传或刷新页面");
+                        }}
+                    >
                         <Page pageNumber={page} width={480} renderTextLayer renderAnnotationLayer />
                     </Document>
                 </div>

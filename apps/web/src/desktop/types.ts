@@ -1,4 +1,4 @@
-export type AppId = "chat" | "chatpdf" | "kb-finder";
+export type AppId = "chat" | "chatpdf" | "kb-finder" | "studio";
 
 export type WindowRect = {
     width: number;

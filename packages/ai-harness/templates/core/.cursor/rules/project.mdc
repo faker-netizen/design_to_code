@@ -1,0 +1,13 @@
+---
+alwaysApply: true
+---
+# 项目约定 — {{PROJECT_NAME}}
+
+- 最小 diff；不扩 scope
+- 复用已有模块；不重复造轮子
+- TypeScript 严格；禁止 `@ts-ignore`、随意 `any`
+- 新 API / 页面：loading、error、empty 状态
+- 业务逻辑不堆 JSX；抽 hook / service
+
+产品文档：`.ai/planning/FEATURE-PLAN.md`  
+决策记录：`.ai/memory/project-decisions.md`

@@ -1,5 +1,8 @@
 import type {ResultSetHeader} from "mysql2";
+import type {Response} from "express";
+import {createUIMessageStream, pipeUIMessageStreamToResponse} from "ai";
 import pool from "../config/database.js";
+import {createUiStreamEmitter} from "../ai/uiStreamAdapter.js";
 import knowledgeBaseService from "./knowledgeBaseService.js";
 import {
     insertAssistantMessage,
@@ -152,6 +155,40 @@ class ChatService {
         await maybeRefreshSessionTitle(userId, session, text);
 
         sse("done", {userMessageId, assistantMessageId, answer, sources});
+    }
+
+    /** Vercel AI SDK UI Message Stream — 与 appendMessage 同逻辑，协议为 AI SDK 标准流 */
+    pipeAppendMessage(params: {
+        res: Response;
+        userId: number;
+        session: ChatSessionRow;
+        content: string;
+        signal?: AbortSignal;
+        requestSkillId?: string | null;
+    }): void {
+        const {res, userId, session, content, signal, requestSkillId} = params;
+
+        pipeUIMessageStreamToResponse({
+            response: res,
+            stream: createUIMessageStream({
+                execute: async ({writer}) => {
+                    const emit = createUiStreamEmitter(writer);
+                    try {
+                        await this.appendMessage({
+                            userId,
+                            session,
+                            content,
+                            sse: emit,
+                            signal,
+                            requestSkillId,
+                        });
+                    } catch (e) {
+                        const message = e instanceof Error ? e.message : "发送失败";
+                        emit("error", {message});
+                    }
+                },
+            }),
+        });
     }
 }
 
